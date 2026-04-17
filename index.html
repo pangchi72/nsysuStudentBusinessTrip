@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>中山大學出差申請單自動化系統</title>
+
+    <!-- pizzip 不在 cdnjs 上，必須用 unpkg -->
+    <script src="https://unpkg.com/docxtemplater@3.68.3/build/docxtemplater.js"></script>
+    <script src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
+    <script src="https://unpkg.com/pizzip@3.2.0/dist/pizzip-utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; padding: 20px; max-width: 700px; margin: auto; line-height: 1.6; background-color: #f9f9f9; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #005CAF; border-bottom: 2px solid #005CAF; padding-bottom: 10px; }
+        .notice { background-color: #e7f3fe; border-left: 6px solid #2196F3; margin-bottom: 20px; padding: 15px; font-size: 0.9em; color: #333; }
+        .notice.error { background-color: #fdecea; border-left-color: #f44336; color: #b71c1c; }
+        .section-title { font-weight: bold; margin-top: 20px; color: #555; background: #eee; padding: 5px 10px; border-radius: 4px; }
+        .form-group { margin: 15px 0; display: flex; align-items: flex-start; }
+        label { width: 140px; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
+        input[type="text"], input[type="date"], textarea { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; flex-grow: 1; }
+        .btn-area { margin-top: 30px; display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px; border: none; transition: 0.3s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-save { background-color: #f0ad4e; color: white; }
+        .btn-save:hover:not(:disabled) { background-color: #ec971f; }
+        .btn-generate { background-color: #005CAF; color: white; }
+        .btn-generate:hover:not(:disabled) { background-color: #004482; }
+        #status-msg { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; font-size: 0.9em; }
+        #status-msg.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        #status-msg.error { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 中山大學出差申請單自動化系統</h2>
+
+    <div class="notice">
+        ⚠️ <strong>注意事項：</strong><br>
+        本系統目前套用之出差單版本為：<strong>112.08版</strong>。<br>
+        若學校有更新，請通知開發者 Pangchi（22801629w@gmail.com）更新模板。<br><br>
+        📁 <strong>使用前請確認：</strong>
+        <code>template.docx</code> 已上傳至與此 <code>index.html</code> 相同的 GitHub 目錄下。
+    </div>
+
+    <div class="section-title">基本資料 (會自動儲存)</div>
+    <div class="form-group">
+        <label>學生姓名:</label>
+        <input type="text" id="name">
+    </div>
+    <div class="form-group">
+        <label>學號:</label>
+        <input type="text" id="student_id">
+    </div>
+    <div class="form-group">
+        <label>系所單位:</label>
+        <input type="text" id="dept">
+    </div>
+    <div class="form-group">
+        <label>連絡電話:</label>
+        <input type="text" id="phone">
+    </div>
+
+    <div class="section-title">出差資訊</div>
+    <div class="form-group">
+        <label>出差類型:</label>
+        <div class="checkbox-group">
+            <label style="width:auto;"><input type="radio" name="travel_type" value="domestic" checked> 國內</label>
+            <label style="width:auto;"><input type="radio" name="travel_type" value="international"> 國外</label>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>出差地點:</label>
+        <input type="text" id="location">
+    </div>
+    <div class="form-group">
+        <label>出差事由:</label>
+        <textarea id="reason" rows="2">執行計畫</textarea>
+    </div>
+    <div class="form-group">
+        <label>經費來源:</label>
+        <input type="text" id="funding" value="計畫支付">
+    </div>
+    <div class="form-group">
+        <label>起迄日期:</label>
+        <input type="date" id="start_date" style="flex-grow:0; width:150px;">
+        <span style="margin: 5px 8px;">至</span>
+        <input type="date" id="end_date" style="flex-grow:0; width:150px;">
+    </div>
+    <div class="form-group">
+        <label>填報日期:</label>
+        <input type="date" id="fill_date" style="flex-grow:0; width:150px;">
+    </div>
+
+    <div class="section-title">擬乘交通工具</div>
+    <div class="form-group">
+        <div class="checkbox-group">
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_car"> 汽車</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_mrt"> 捷運</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_train"> 火車</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_thsr"> 高鐵</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_airplane"> 飛機</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_boat"> 船舶</label>
+            <label style="width:auto;"><input type="checkbox" class="trans-cb" id="c_taxi"> 計程車</label>
+        </div>
+    </div>
+
+    <div class="section-title">特殊交通原因 (勾選後自動帶入原因文字)</div>
+    <div class="form-group">
+        <div class="checkbox-group">
+            <label style="width:auto;"><input type="checkbox" id="reason_taxi"> 計程車</label>
+            <label style="width:auto;"><input type="checkbox" id="reason_rent_car"> 租賃汽車</label>
+            <label style="width:auto;"><input type="checkbox" id="reason_rent_bike"> 機車</label>
+        </div>
+    </div>
+
+    <div class="btn-area">
+        <button class="btn-save" onclick="saveProfile()">💾 儲存個人預設資料</button>
+        <button class="btn-generate" id="btn-gen" onclick="generateDoc()">📄 產生出差申請單</button>
+    </div>
+
+    <!-- ✅ 新增：狀態訊息顯示區，取代 alert() -->
+    <div id="status-msg"></div>
+</div>
+
+<script>
+    // ✅ 修正：使用本地時間避免時區偏移，date input 回傳 "YYYY-MM-DD"
+    function parseLocalDate(dateStr) {
+        if (!dateStr) return null;
+        const [y, m, d] = dateStr.split("-").map(Number);
+        return new Date(y, m - 1, d); // 月份 0-based，直接用本地時間
+    }
+
+    // 設定今天日期（本地時間）
+    function todayStr() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+
+    document.getElementById("fill_date").value = todayStr();
+
+    // 顯示狀態訊息（取代惱人的 alert）
+    function showStatus(msg, type = "success") {
+        const el = document.getElementById("status-msg");
+        el.textContent = msg;
+        el.className = type;
+        el.style.display = "block";
+        if (type === "success") setTimeout(() => { el.style.display = "none"; }, 4000);
+    }
+
+    // 自動載入儲存的資料
+    window.onload = function () {
+        try {
+            const saved = localStorage.getItem("nsysu_profile");
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById("name").value = data.name || "";
+                document.getElementById("student_id").value = data.student_id || "";
+                document.getElementById("dept").value = data.dept || "";
+                document.getElementById("phone").value = data.phone || "";
+            }
+        } catch (e) {
+            console.warn("讀取 localStorage 失敗:", e);
+        }
+    };
+
+    function saveProfile() {
+        const profile = {
+            name: document.getElementById("name").value,
+            student_id: document.getElementById("student_id").value,
+            dept: document.getElementById("dept").value,
+            phone: document.getElementById("phone").value
+        };
+        localStorage.setItem("nsysu_profile", JSON.stringify(profile));
+        showStatus("✅ 個人資料已儲存！下次開啟將自動填寫。", "success");
+    }
+
+    async function generateDoc() {
+        const btn = document.getElementById("btn-gen");
+        btn.disabled = true;
+        btn.textContent = "⏳ 產生中...";
+
+        // ✅ 修正：template.docx 路徑使用相對路徑，確保 GitHub Pages 可正確找到
+        const templateUrl = "./template.docx";
+
+        try {
+            // --- 基本驗證 ---
+            const name = document.getElementById("name").value.trim();
+            const startStr = document.getElementById("start_date").value;
+            const endStr = document.getElementById("end_date").value;
+
+            if (!name) throw new Error("請填寫學生姓名。");
+            if (!startStr || !endStr) throw new Error("請填寫起迄日期。");
+
+            const sd = parseLocalDate(startStr);
+            const ed = parseLocalDate(endStr);
+            const fd = parseLocalDate(document.getElementById("fill_date").value) || new Date();
+
+            if (ed < sd) throw new Error("結束日期不能早於開始日期。");
+
+            const days = Math.round((ed - sd) / (1000 * 60 * 60 * 24)) + 1;
+
+            // --- 特殊交通原因字串 ---
+            let selectedTransport = [];
+            if (document.getElementById("reason_taxi").checked) selectedTransport.push("計程車");
+            const r_car = document.getElementById("reason_rent_car").checked;
+            const r_bike = document.getElementById("reason_rent_bike").checked;
+            if (r_car && r_bike) selectedTransport.push("租賃汽車與機車");
+            else if (r_car) selectedTransport.push("租賃汽車");
+            else if (r_bike) selectedTransport.push("租賃機車");
+
+            const taxiReasonStr = selectedTransport.length > 0
+                ? `因需要運送實驗器材，擬搭乘${selectedTransport.join("與")}`
+                : "";
+
+            // --- 準備渲染資料 ---
+            const travelType = document.querySelector('input[name="travel_type"]:checked').value;
+            const context = {
+                name: name,
+                student_id: document.getElementById("student_id").value.trim(),
+                dept: document.getElementById("dept").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                location: document.getElementById("location").value.trim(),
+                funding: document.getElementById("funding").value.trim(),
+                reason: document.getElementById("reason").value.trim(),
+                taxi_reason: taxiReasonStr,
+
+                domestic:      travelType === "domestic"      ? "■" : "□",
+                international: travelType === "international" ? "■" : "□",
+
+                // ✅ 修正：民國年日期，使用本地時間避免時區錯誤
+                s_y: sd.getFullYear() - 1911, s_m: sd.getMonth() + 1, s_d: sd.getDate(),
+                e_y: ed.getFullYear() - 1911, e_m: ed.getMonth() + 1, e_d: ed.getDate(),
+                t_y: fd.getFullYear() - 1911, t_m: fd.getMonth() + 1, t_d: fd.getDate(),
+                days: days
+            };
+
+            // 交通工具勾選狀態
+            ["c_car", "c_mrt", "c_train", "c_thsr", "c_airplane", "c_boat", "c_taxi"].forEach(id => {
+                context[id] = document.getElementById(id).checked ? "■" : "□";
+            });
+
+            // --- 讀取 template.docx ---
+            const response = await fetch(templateUrl);
+            if (!response.ok) {
+                throw new Error(
+                    `找不到 template.docx（HTTP ${response.status}）。\n` +
+                    `請確認 template.docx 已上傳至 GitHub repo 的根目錄，且檔名為全小寫。`
+                );
+            }
+            const arrayBuffer = await response.arrayBuffer();
+
+            const zip = new PizZip(arrayBuffer);
+            const doc = new docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+                delimiters: { start: '{', end: '}' },
+                nullGetter: function() { return ""; }
+            });
+
+            doc.render(context);
+
+            const blob = doc.getZip().generate({
+                type: "blob",
+                mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            });
+
+            saveAs(blob, `出差申請單_${name}.docx`);
+            showStatus("✅ 文件已成功產生並下載！", "success");
+
+        } catch (error) {
+            console.error("generateDoc error:", error);
+            showStatus("❌ 文件產生失敗：" + error.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "📄 產生出差申請單";
+        }
+    }
+</script>
+
+</body>
+</html>
